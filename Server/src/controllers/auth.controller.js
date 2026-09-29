@@ -1,10 +1,14 @@
 import UserModel from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import { generateAccessToken, generateRefreshToken,verifyRefreshToken } from "../utils/token.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/token.js";
 
 export const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
   try {
-    const { name, email, password } = req.body;
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "Email already exists" });
@@ -30,6 +34,7 @@ export const registerUser = async (req, res) => {
       message: "User registered successfully",
       data: {
         user: { name: user.name, email: user.email },
+        accessToken,
       },
     });
   } catch (error) {
@@ -38,8 +43,8 @@ export const registerUser = async (req, res) => {
   }
 };
 export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -72,7 +77,6 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 export const getMe = async (req, res) => {
   const { userId } = req.user;
   const user = await UserModel.findById(userId);
@@ -89,14 +93,15 @@ export const getMe = async (req, res) => {
 export const refreshToken = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    return res.status(401).json({ message: "Refresh token not found" });
+    return res.status(401).json({ message: "invalid token" });
   }
   try {
     const decoded = verifyRefreshToken(refreshToken);
     const user = await UserModel.findById(decoded.userId);
 
     if (!user || user.refreshToken !== refreshToken) {
-      await UserModel.findByIdAndUpdate(user._id, { refreshToken: null });
+      if (user)
+        await UserModel.findByIdAndUpdate(user._id, { refreshToken: null });
 
       return res.status(403).json({ message: "Invalid refresh token" });
     }
@@ -126,20 +131,19 @@ export const refreshToken = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 export const logoutUser = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
     return res.status(401).json({ message: "Refresh token not found" });
   }
-  
+
   try {
     // const decoded = verifyRefreshToken(refreshToken);
     // const user = await UserModel.findById(decoded.userId);
     // if (!user || user.refreshToken !== refreshToken) {
     //   return res.status(403).json({ message: "Invalid refresh token" });
     // }
-    const {userId} = req.user
+    const { userId } = req.user;
     await UserModel.findByIdAndUpdate(userId, { refreshToken: null });
     res.clearCookie("refreshToken");
     req.headers.authorization = null;

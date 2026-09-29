@@ -33,7 +33,7 @@ export const registerValidator = [
     .withMessage("password is required"),
   body("confirmPassword")
     .exists()
-    .withMessage("confirm password is required")
+    .withMessage("confirm password is required")  
     .bail()
     .isString()
     .withMessage("confirm password must be in Text format")
