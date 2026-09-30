@@ -1,4 +1,4 @@
-const API_ROOT = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_ROOT = import.meta.env.VITE_API_URL || "/api";
 const TOKEN_KEY = "forme.accessToken";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
